@@ -50,6 +50,8 @@ export const ROUTES = {
   ADMIN_BLOG: "/admin/blog",
   LEGAL_MENTIONS: "/mentions-legales",
   LEGAL_PRIVACY: "/politique-de-confidentialite",
+  PAYMENT_SUCCESS: "/payment-success",
+  PAYMENT_CANCEL: "/payment-cancel",
 };
 
 // ============================================================================
