@@ -27,6 +27,12 @@ import {
   updateGeneratedBooklet,
 } from "./db";
 import { notifyOwner } from "./_core/notification";
+import { sendEmail } from "./_core/email";
+import BookletRequestCustomer from "./emails/BookletRequestCustomer";
+import BookletRequestAdmin from "./emails/BookletRequestAdmin";
+import AppointmentCustomer from "./emails/AppointmentCustomer";
+import AppointmentAdmin from "./emails/AppointmentAdmin";
+import React from "react";
 
 // ============================================================================
 // VALIDATION SCHEMAS
@@ -82,11 +88,43 @@ const bookletRouter = router({
         status: "pending",
       });
 
-      // Notify owner
+      // Notify owner (safety-net plain channel)
       await notifyOwner({
         title: "Nouvelle demande de livret",
         content: `${input.firstName} ${input.lastName} a demandé un livret astrologique. Email: ${input.email}`,
       });
+
+      // Templated emails — fire-and-forget; never block the mutation
+      const ownerEmail = process.env.OWNER_EMAIL ?? "";
+      await Promise.allSettled([
+        sendEmail({
+          to: input.email,
+          subject: "Votre demande de livret astrologique a bien été reçue",
+          react: React.createElement(BookletRequestCustomer, {
+            firstName: input.firstName,
+            email: input.email,
+            requestId: request.id,
+          }),
+        }),
+        ...(ownerEmail
+          ? [
+              sendEmail({
+                to: ownerEmail,
+                subject: `Nouvelle demande de livret — ${input.firstName} ${input.lastName}`,
+                react: React.createElement(BookletRequestAdmin, {
+                  firstName: input.firstName,
+                  lastName: input.lastName,
+                  email: input.email,
+                  dateOfBirth: input.dateOfBirth,
+                  timeOfBirth: input.timeOfBirth,
+                  placeOfBirth: input.placeOfBirth,
+                  message: input.message,
+                  requestId: request.id,
+                }),
+              }),
+            ]
+          : []),
+      ]);
 
       return {
         success: true,
@@ -138,11 +176,43 @@ const appointmentRouter = router({
         status: "pending",
       });
 
-      // Notify owner
+      // Notify owner (safety-net plain channel)
       await notifyOwner({
         title: "Nouvelle réservation de rendez-vous",
         content: `${input.firstName} ${input.lastName} a réservé un rendez-vous pour ${input.appointmentDate}. Email: ${input.email}`,
       });
+
+      // Templated emails — fire-and-forget; never block the mutation
+      const ownerEmailAppt = process.env.OWNER_EMAIL ?? "";
+      const apptDate = new Date(input.appointmentDate);
+      await Promise.allSettled([
+        sendEmail({
+          to: input.email,
+          subject: "Votre demande de rendez-vous a bien été reçue",
+          react: React.createElement(AppointmentCustomer, {
+            firstName: input.firstName,
+            appointmentDate: apptDate,
+            message: input.message,
+          }),
+        }),
+        ...(ownerEmailAppt
+          ? [
+              sendEmail({
+                to: ownerEmailAppt,
+                subject: `Nouveau rendez-vous — ${input.firstName} ${input.lastName}`,
+                react: React.createElement(AppointmentAdmin, {
+                  firstName: input.firstName,
+                  lastName: input.lastName,
+                  email: input.email,
+                  phone: input.phone,
+                  appointmentDate: apptDate,
+                  message: input.message,
+                  appointmentId: appointment.id,
+                }),
+              }),
+            ]
+          : []),
+      ]);
 
       return {
         success: true,
