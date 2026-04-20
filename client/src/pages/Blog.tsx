@@ -29,14 +29,18 @@ export default function Blog() {
   return (
     <Layout>
       {/* Hero */}
-      <section className="py-16 md:py-24 bg-card border-b border-border">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-5xl md:text-6xl font-serif font-bold text-foreground mb-6">
-            Blog
+      <section className="relative py-20 md:py-28 overflow-hidden starfield -mt-16 md:-mt-20 pt-32 md:pt-40">
+        <div className="absolute inset-0 starfield-twinkle mix-blend-screen opacity-70 pointer-events-none" />
+        <div className="relative container mx-auto px-4 text-center">
+          <p className="uppercase tracking-[0.3em] text-accent text-xs md:text-sm font-medium mb-5">
+            Le journal
+          </p>
+          <h1 className="text-5xl md:text-6xl font-serif font-bold text-white mb-6 leading-[1.05]">
+            Chroniques <span className="italic text-accent">célestes</span>
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Articles sur l'astrologie, la guidance spirituelle et le développement
-            personnel.
+          <p className="text-lg text-white/80 max-w-2xl mx-auto">
+            Articles sur l'astrologie, la guidance spirituelle et le
+            développement personnel.
           </p>
         </div>
       </section>

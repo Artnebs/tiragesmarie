@@ -6,13 +6,22 @@ export default function Services() {
   return (
     <Layout>
       {/* Hero */}
-      <section className="py-16 md:py-24 bg-card border-b border-border">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-5xl md:text-6xl font-serif font-bold text-foreground mb-6">
-            Mes prestations
+      <section className="relative py-20 md:py-28 overflow-hidden starfield -mt-16 md:-mt-20 pt-32 md:pt-40">
+        <div className="absolute inset-0 starfield-twinkle mix-blend-screen opacity-70 pointer-events-none" />
+        <div className="absolute inset-0 pointer-events-none">
+          <span className="absolute top-[30%] left-[12%] text-accent/70 text-xl float-slow">✦</span>
+          <span className="absolute top-[55%] right-[14%] text-accent/60 text-lg float-slow" style={{ animationDelay: "2.5s" }}>✧</span>
+        </div>
+        <div className="relative container mx-auto px-4 text-center">
+          <p className="uppercase tracking-[0.3em] text-accent text-xs md:text-sm font-medium mb-5">
+            Prestations
+          </p>
+          <h1 className="text-5xl md:text-6xl font-serif font-bold text-white mb-6 leading-[1.05]">
+            Mes <span className="italic text-accent">prestations</span>
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Trois services complémentaires pour explorer votre univers astrologique et recevoir des guidances adaptées à votre destinée.
+          <p className="text-lg text-white/80 max-w-2xl mx-auto">
+            Trois services complémentaires pour explorer votre univers
+            astrologique et recevoir des guidances adaptées à votre destinée.
           </p>
         </div>
       </section>

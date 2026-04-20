@@ -1,4 +1,6 @@
+import { useRef } from "react";
 import { Link } from "wouter";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { ROUTES, SERVICES } from "@shared/constants";
 import Layout from "@/components/Layout";
 
@@ -8,165 +10,304 @@ const MARIE_PORTRAIT =
   "https://d2xsxph8kpxj0f.cloudfront.net/310419663032226662/ShUkNE3tSckVw9ug4bUHBt/marie-portrait-KCBi2bVqXk6y7uw7QxinkA.webp";
 const ZODIAC_ILLUSTRATION =
   "https://d2xsxph8kpxj0f.cloudfront.net/310419663032226662/ShUkNE3tSckVw9ug4bUHBt/zodiac-illustration-bWCHQ8rxgfJCxxZDo8Bsnt.webp";
-const DIVIDER_ORNAMENT =
-  "https://d2xsxph8kpxj0f.cloudfront.net/310419663032226662/ShUkNE3tSckVw9ug4bUHBt/divider-ornament-3vxRTuTF7V3XsreATpDPpT.webp";
+
+const EASE = [0.22, 1, 0.36, 1] as const;
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 28 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.7, ease: EASE },
+  },
+};
+
+const staggerContainer = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.12, delayChildren: 0.1 },
+  },
+};
 
 export default function Home() {
+  const heroRef = useRef<HTMLElement>(null);
+  const { scrollY } = useScroll();
+  // Parallax: background image drifts slowly up, stars drift faster, content drifts mid.
+  const bgY = useTransform(scrollY, [0, 800], [0, 160]);
+  const starsY = useTransform(scrollY, [0, 800], [0, -120]);
+  const heroContentY = useTransform(scrollY, [0, 600], [0, 80]);
+  const heroFade = useTransform(scrollY, [0, 400], [1, 0.35]);
+
   return (
     <Layout>
-      {/* Hero Section */}
+      {/* ================================= HERO ================================= */}
       <section
-        className="relative min-h-screen flex items-center justify-center bg-cover bg-center"
-        style={{ backgroundImage: `url(${HERO_BACKGROUND})` }}
+        ref={heroRef}
+        className="relative min-h-[88vh] md:min-h-screen flex items-center justify-center overflow-hidden"
       >
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative container mx-auto px-4 text-center">
-          <div className="max-w-3xl mx-auto">
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-serif font-bold text-foreground mb-6 leading-tight">
-              Découvrez votre destinée astrologique
-            </h1>
-            <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Des guidances spirituelles personnalisées et des livrets astrologiques uniques pour éclairer votre chemin.
-            </p>
+        {/* Background image (parallax) */}
+        <motion.div
+          style={{ y: bgY, backgroundImage: `url(${HERO_BACKGROUND})` }}
+          className="absolute inset-0 bg-cover bg-center scale-110"
+        />
+        {/* Gradient overlay — darker at top for nav readability, fade to page at bottom */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/45 to-background/95" />
+        {/* Twinkle layer (CSS keyframe) */}
+        <div className="absolute inset-0 starfield-twinkle pointer-events-none mix-blend-screen opacity-70" />
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+        {/* Floating decorative stars (parallax counter-drift) */}
+        <motion.div
+          style={{ y: starsY }}
+          className="absolute inset-0 pointer-events-none"
+        >
+          <span className="absolute top-[14%] left-[10%] text-accent/70 text-xl float-slow">✦</span>
+          <span className="absolute top-[22%] right-[14%] text-accent/80 text-2xl float-slow" style={{ animationDelay: "1.5s" }}>✧</span>
+          <span className="absolute top-[38%] left-[78%] text-accent/60 text-sm float-slow" style={{ animationDelay: "2.2s" }}>✦</span>
+          <span className="absolute top-[55%] left-[6%] text-accent/60 text-lg float-slow" style={{ animationDelay: "3s" }}>✦</span>
+          <span className="absolute top-[68%] right-[18%] text-accent/70 text-xl float-slow" style={{ animationDelay: "4.5s" }}>✧</span>
+          <span className="absolute top-[82%] left-[30%] text-accent/50 text-sm float-slow" style={{ animationDelay: "5s" }}>✦</span>
+          <span className="absolute top-[12%] left-[55%] text-white/40 text-xs float-slow" style={{ animationDelay: "2.8s" }}>·</span>
+          <span className="absolute top-[46%] left-[22%] text-white/50 text-xs float-slow" style={{ animationDelay: "3.6s" }}>·</span>
+          <span className="absolute top-[75%] left-[68%] text-white/40 text-xs float-slow" style={{ animationDelay: "1.2s" }}>·</span>
+        </motion.div>
+
+        <motion.div
+          initial="hidden"
+          animate="show"
+          variants={staggerContainer}
+          style={{ y: heroContentY, opacity: heroFade }}
+          className="relative container mx-auto px-4 text-center"
+        >
+          <div className="max-w-3xl mx-auto">
+            <motion.div variants={fadeUp}>
+              <p className="uppercase tracking-[0.3em] text-accent text-xs md:text-sm font-medium mb-6">
+                Guidances &nbsp;✦&nbsp; Astrologie &nbsp;✦&nbsp; Intuition
+              </p>
+            </motion.div>
+            <motion.h1
+              variants={fadeUp}
+              className="text-5xl md:text-6xl lg:text-7xl font-serif font-bold text-white mb-6 leading-[1.05] tracking-tight"
+            >
+              Votre ciel intérieur,
+              <br />
+              <span className="text-accent italic">révélé</span>
+            </motion.h1>
+            <motion.p
+              variants={fadeUp}
+              className="text-lg md:text-xl text-white/85 mb-10 max-w-2xl mx-auto leading-relaxed"
+            >
+              Des guidances spirituelles et des livrets astrologiques
+              personnalisés, écrits pour vous seule, à partir de votre ciel de
+              naissance.
+            </motion.p>
+
+            <motion.div
+              variants={fadeUp}
+              className="flex flex-col sm:flex-row gap-4 justify-center mb-14"
+            >
               <Link href={ROUTES.BOOKLET}>
-                <a className="px-8 py-4 bg-accent text-accent-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity text-center">
+                <a className="group px-8 py-4 bg-accent text-accent-foreground rounded-full font-semibold hover:shadow-xl hover:shadow-accent/30 hover:-translate-y-0.5 transition-all text-center">
                   Commander un livret astral
+                  <span className="inline-block ml-1 transition-transform group-hover:translate-x-1">→</span>
                 </a>
               </Link>
               <Link href={ROUTES.BOOKING}>
-                <a className="px-8 py-4 border-2 border-accent text-accent rounded-lg font-semibold hover:bg-accent hover:text-accent-foreground transition-colors text-center">
+                <a className="px-8 py-4 border-2 border-white/70 text-white rounded-full font-semibold hover:bg-white hover:text-background transition-colors text-center">
                   Réserver un rendez-vous
                 </a>
               </Link>
-            </div>
+            </motion.div>
 
-            {/* Scroll Indicator */}
-            <div className="animate-bounce text-accent text-3xl">↓</div>
+            <motion.div
+              variants={fadeUp}
+              className="flex flex-col items-center gap-2 text-white/60"
+            >
+              <span className="text-xs uppercase tracking-widest">Découvrir</span>
+              <span className="animate-bounce text-accent text-2xl">↓</span>
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
       </section>
 
-      {/* Presentation Section */}
-      <section className="py-16 md:py-24 bg-card">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            {/* Image */}
-            <div className="flex justify-center">
-              <img
-                src={MARIE_PORTRAIT}
-                alt="Marie"
-                className="w-full max-w-md rounded-lg shadow-lg"
-              />
-            </div>
+      {/* ================================= PRESENTATION ========================= */}
+      <section className="py-20 md:py-28 bg-card">
+        <motion.div
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.2 }}
+          variants={staggerContainer}
+          className="container mx-auto px-4"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-14 items-center">
+            <motion.div variants={fadeUp} className="flex justify-center">
+              <div className="relative">
+                <img
+                  src={MARIE_PORTRAIT}
+                  alt="Marie"
+                  className="w-full max-w-md rounded-2xl shadow-2xl"
+                />
+                <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-accent/15 rounded-full blur-2xl" />
+                <div className="absolute -top-4 -left-4 w-16 h-16 bg-accent/20 rounded-full blur-xl" />
+              </div>
+            </motion.div>
 
-            {/* Content */}
-            <div>
-              <h2 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-6">
-                Bienvenue, je suis Marie
+            <motion.div variants={fadeUp}>
+              <p className="uppercase tracking-[0.25em] text-accent text-xs font-medium mb-3">
+                Qui suis-je
+              </p>
+              <h2 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-6 leading-[1.1]">
+                Bienvenue,
+                <br />
+                je suis <span className="text-accent italic">Marie</span>
               </h2>
-              <p className="text-lg text-muted-foreground mb-4">
-                Depuis plus de 15 ans, j'accompagne les personnes dans leur quête de sens et de compréhension de leur destinée astrologique.
+              <p className="text-lg text-muted-foreground mb-4 leading-relaxed">
+                Depuis plus de quinze ans, j'accompagne celles et ceux qui
+                cherchent du sens à leur parcours, à leurs cycles, à leurs
+                rencontres.
               </p>
-              <p className="text-lg text-muted-foreground mb-6">
-                Mon approche combine l'astrologie traditionnelle avec une écoute bienveillante et une guidance spirituelle adaptée à votre situation unique.
-              </p>
-              <p className="text-lg text-muted-foreground mb-8">
-                Chaque consultation et chaque livret est créé avec intention et respect pour vous offrir des insights profonds et transformateurs.
+              <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
+                Mon approche : une astrologie posée, claire, ancrée — avec une
+                écoute qui respecte votre histoire.
               </p>
               <Link href={ROUTES.ABOUT}>
-                <a className="inline-block px-6 py-3 border-2 border-accent text-accent rounded-lg font-semibold hover:bg-accent hover:text-accent-foreground transition-colors">
-                  En savoir plus sur mon parcours
+                <a className="inline-flex items-center gap-2 px-6 py-3 border-2 border-accent text-accent rounded-full font-semibold hover:bg-accent hover:text-accent-foreground transition-colors">
+                  Mon parcours
+                  <span>→</span>
                 </a>
               </Link>
-            </div>
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
       </section>
 
-      {/* Services Section */}
-      <section className="py-16 md:py-24 bg-background">
+      {/* ================================= SERVICES ============================= */}
+      <section className="py-20 md:py-28 bg-background">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-4">
-              Mes prestations
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Trois services complémentaires pour explorer votre univers astrologique et recevoir des guidances adaptées.
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.4 }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <p className="uppercase tracking-[0.25em] text-accent text-xs font-medium mb-3">
+              Prestations
             </p>
-          </div>
+            <h2 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-4 serif-divider">
+              Trois portes d'entrée
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto mt-6">
+              Trois manières complémentaires d'explorer votre ciel et de
+              recevoir une guidance adaptée à votre moment de vie.
+            </p>
+          </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <motion.div
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.2 }}
+            variants={staggerContainer}
+            className="grid grid-cols-1 md:grid-cols-3 gap-8"
+          >
             {SERVICES.map((service) => (
-              <div
+              <motion.div
                 key={service.id}
-                className="bg-card rounded-lg p-8 shadow-sm hover:shadow-md transition-shadow text-center"
+                variants={fadeUp}
+                className="gold-glow bg-card rounded-2xl p-8 border border-border/60 text-center"
               >
-                <div className="text-5xl mb-4">{service.icon}</div>
-                <h3 className="text-2xl font-serif font-bold text-foreground mb-3">
+                <div className="text-5xl mb-5">{service.icon}</div>
+                <h3 className="text-2xl font-serif font-bold text-foreground mb-4">
                   {service.title}
                 </h3>
-                <p className="text-muted-foreground mb-6">{service.description}</p>
+                <p className="text-muted-foreground mb-6 leading-relaxed">
+                  {service.description}
+                </p>
                 <Link href={ROUTES.SERVICES}>
-                  <a className="inline-block text-accent font-semibold hover:text-accent-foreground transition-colors">
+                  <a className="inline-block text-accent font-semibold tracking-wide hover:underline underline-offset-4">
                     Découvrir →
                   </a>
                 </Link>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* Zodiac Section */}
-      <section className="py-16 md:py-24 bg-card">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            {/* Content */}
-            <div>
-              <h2 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-6">
-                Explorez votre profil astrologique
-              </h2>
-              <p className="text-lg text-muted-foreground mb-4">
-                Votre signe solaire, votre signe lunaire et votre ascendant forment une trinité astrologique unique qui définit votre essence.
+      {/* ================================= ZODIAC =============================== */}
+      <section className="py-20 md:py-28 bg-card">
+        <motion.div
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.2 }}
+          variants={staggerContainer}
+          className="container mx-auto px-4"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-14 items-center">
+            <motion.div variants={fadeUp}>
+              <p className="uppercase tracking-[0.25em] text-accent text-xs font-medium mb-3">
+                Le livret astral
               </p>
-              <p className="text-lg text-muted-foreground mb-6">
-                Grâce à un livret astral personnalisé, découvrez les influences planétaires qui façonnent votre destinée et reçevez des guidances adaptées à votre profil cosmique.
+              <h2 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-6 leading-[1.1]">
+                Une trinité cosmique,
+                <br />
+                <span className="italic">la vôtre</span>
+              </h2>
+              <p className="text-lg text-muted-foreground mb-4 leading-relaxed">
+                Votre signe solaire, votre lune et votre ascendant forment
+                l'alphabet de votre ciel — la signature qui vous rend unique.
+              </p>
+              <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
+                Je rédige chaque livret à la main, à partir de votre ciel de
+                naissance précis.
               </p>
               <Link href={ROUTES.BOOKLET}>
-                <a className="inline-block px-6 py-3 bg-accent text-accent-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity">
+                <a className="inline-flex items-center gap-2 px-7 py-3.5 bg-accent text-accent-foreground rounded-full font-semibold hover:shadow-xl hover:shadow-accent/30 hover:-translate-y-0.5 transition-all">
                   Commander votre livret
+                  <span>→</span>
                 </a>
               </Link>
-            </div>
+            </motion.div>
 
-            {/* Image */}
-            <div className="flex justify-center">
+            <motion.div
+              variants={fadeUp}
+              className="flex justify-center relative"
+            >
+              <div className="absolute inset-0 bg-accent/10 blur-3xl rounded-full" />
               <img
                 src={ZODIAC_ILLUSTRATION}
                 alt="Zodiaque"
-                className="w-full max-w-md"
+                className="relative w-full max-w-md float-slow"
               />
-            </div>
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="py-16 md:py-24 bg-background">
+      {/* ================================= TESTIMONIALS ========================= */}
+      <section className="py-20 md:py-28 bg-background">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.4 }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-14"
+          >
+            <p className="uppercase tracking-[0.25em] text-accent text-xs font-medium mb-3">
               Témoignages
-            </h2>
-            <p className="text-lg text-muted-foreground">
-              Ce que mes clients disent de leur expérience
             </p>
-          </div>
+            <h2 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-4 serif-divider">
+              Ce qu'elles en disent
+            </h2>
+          </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <motion.div
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.2 }}
+            variants={staggerContainer}
+            className="grid grid-cols-1 md:grid-cols-3 gap-8"
+          >
             {[
               {
                 name: "Sophie",
@@ -174,48 +315,64 @@ export default function Home() {
               },
               {
                 name: "Julien",
-                text: "Marie a une capacité remarquable à capturer l'essence de mon profil astrologique. Vraiment transformateur.",
+                text: "Marie a une capacité remarquable à capturer l'essence de mon profil. Vraiment transformateur.",
               },
               {
                 name: "Émilie",
-                text: "Les guidances reçues lors de ma consultation m'ont aidée à prendre des décisions importantes avec plus de clarté.",
+                text: "Les guidances reçues lors de ma consultation m'ont aidée à prendre des décisions avec plus de clarté.",
               },
-            ].map((testimonial, idx) => (
-              <div
-                key={idx}
-                className="bg-card rounded-lg p-8 shadow-sm hover:shadow-md transition-shadow"
+            ].map((testimonial) => (
+              <motion.div
+                key={testimonial.name}
+                variants={fadeUp}
+                className="gold-glow bg-card rounded-2xl p-8 border border-border/60 relative"
               >
-                <p className="text-muted-foreground mb-4 italic">
-                  "{testimonial.text}"
+                <span className="absolute -top-3 left-6 text-accent text-4xl leading-none font-serif select-none">
+                  “
+                </span>
+                <p className="text-muted-foreground mb-5 italic leading-relaxed">
+                  {testimonial.text}
                 </p>
-                <p className="font-semibold text-foreground">— {testimonial.name}</p>
-              </div>
+                <p className="font-semibold text-foreground tracking-wide">
+                  — {testimonial.name}
+                </p>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-16 md:py-24 bg-accent">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl md:text-5xl font-serif font-bold text-accent-foreground mb-6">
-            Prêt à explorer votre destinée ?
-          </h2>
-          <p className="text-lg text-accent-foreground mb-8 max-w-2xl mx-auto opacity-90">
-            Commencez votre voyage astrologique aujourd'hui avec un livret personnalisé ou une consultation privée.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href={ROUTES.BOOKLET}>
-              <a className="px-8 py-4 bg-accent-foreground text-accent rounded-lg font-semibold hover:opacity-90 transition-opacity text-center">
-                Livret astral
-              </a>
-            </Link>
-            <Link href={ROUTES.BOOKING}>
-              <a className="px-8 py-4 border-2 border-accent-foreground text-accent-foreground rounded-lg font-semibold hover:bg-accent-foreground hover:text-accent transition-colors text-center">
-                Rendez-vous
-              </a>
-            </Link>
-          </div>
+      {/* ================================= CTA ================================== */}
+      <section className="relative py-20 md:py-28 overflow-hidden starfield">
+        <div className="absolute inset-0 starfield-twinkle mix-blend-screen opacity-70 pointer-events-none" />
+        <div className="relative container mx-auto px-4 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.4 }}
+            transition={{ duration: 0.7 }}
+            className="max-w-2xl mx-auto"
+          >
+            <h2 className="text-4xl md:text-5xl font-serif font-bold text-white mb-6 leading-[1.1]">
+              Prête à explorer votre destinée ?
+            </h2>
+            <p className="text-lg text-white/80 mb-10 max-w-xl mx-auto">
+              Commencez votre voyage astrologique avec un livret personnalisé
+              ou une consultation privée.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href={ROUTES.BOOKLET}>
+                <a className="px-8 py-4 bg-accent text-accent-foreground rounded-full font-semibold hover:shadow-xl hover:shadow-accent/40 hover:-translate-y-0.5 transition-all">
+                  Livret astral — 49€
+                </a>
+              </Link>
+              <Link href={ROUTES.BOOKING}>
+                <a className="px-8 py-4 border-2 border-white/70 text-white rounded-full font-semibold hover:bg-white hover:text-background transition-colors">
+                  Consultation — 79€
+                </a>
+              </Link>
+            </div>
+          </motion.div>
         </div>
       </section>
     </Layout>

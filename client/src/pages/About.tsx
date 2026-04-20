@@ -9,13 +9,18 @@ export default function About() {
   return (
     <Layout>
       {/* Hero */}
-      <section className="py-16 md:py-24 bg-card border-b border-border">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-5xl md:text-6xl font-serif font-bold text-foreground mb-6">
-            À propos de Marie
+      <section className="relative py-20 md:py-28 overflow-hidden starfield -mt-16 md:-mt-20 pt-32 md:pt-40">
+        <div className="absolute inset-0 starfield-twinkle mix-blend-screen opacity-70 pointer-events-none" />
+        <div className="relative container mx-auto px-4 text-center">
+          <p className="uppercase tracking-[0.3em] text-accent text-xs md:text-sm font-medium mb-5">
+            Qui suis-je
+          </p>
+          <h1 className="text-5xl md:text-6xl font-serif font-bold text-white mb-6 leading-[1.05]">
+            À propos de <span className="italic text-accent">Marie</span>
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Mon parcours, ma philosophie et ma passion pour l'astrologie et la guidance spirituelle.
+          <p className="text-lg text-white/80 max-w-2xl mx-auto">
+            Mon parcours, ma philosophie et ma passion pour l'astrologie et la
+            guidance spirituelle.
           </p>
         </div>
       </section>
