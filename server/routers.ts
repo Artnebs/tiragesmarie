@@ -2,6 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { stripeRouter } from "./stripe-router";
 import { z } from "zod";
 import {
   createBookletRequest,
@@ -417,6 +418,7 @@ export const appRouter = router({
   blog: blogRouter,
   astro: astroRouter,
   bookletGenerator: bookletGeneratorRouter,
+  stripe: stripeRouter,
 });
 
 export type AppRouter = typeof appRouter;
