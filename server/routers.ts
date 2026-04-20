@@ -1,9 +1,12 @@
 import { COOKIE_NAME } from "@shared/const";
+import { TRPCError } from "@trpc/server";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { stripeRouter } from "./stripe-router";
 import { z } from "zod";
+import { availabilityRouter, isValidSlotStart } from "./availability-router";
+import { isSlotTaken } from "./availability-db";
 import {
   createBookletRequest,
   getBookletRequests,
@@ -167,6 +170,24 @@ const appointmentRouter = router({
   create: publicProcedure
     .input(AppointmentRequestSchema)
     .mutation(async ({ input }) => {
+      // ── Slot-alignment check ──────────────────────────────────────────────
+      const validSlot = await isValidSlotStart(input.appointmentDate);
+      if (!validSlot) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Ce créneau n'est pas un créneau valide.",
+        });
+      }
+
+      // ── Double-booking guard ──────────────────────────────────────────────
+      const alreadyTaken = await isSlotTaken(new Date(input.appointmentDate));
+      if (alreadyTaken) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Créneau déjà réservé",
+        });
+      }
+
       const appointment = await createAppointment({
         firstName: input.firstName,
         lastName: input.lastName,
@@ -485,6 +506,7 @@ export const appRouter = router({
 
   booklet: bookletRouter,
   appointment: appointmentRouter,
+  availability: availabilityRouter,
   blog: blogRouter,
   astro: astroRouter,
   bookletGenerator: bookletGeneratorRouter,

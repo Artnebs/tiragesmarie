@@ -8,7 +8,7 @@ import { ROUTES } from "@shared/constants";
 import Home from "./pages/Home";
 import Services from "./pages/Services";
 import Booklet from "./pages/Booklet";
-import BookingCalendly from "./pages/BookingCalendly";
+import Booking from "./pages/Booking";
 import Blog from "./pages/Blog";
 import About from "./pages/About";
 import FAQ from "./pages/FAQ";
@@ -25,7 +25,7 @@ function Router() {
       <Route path={ROUTES.HOME} component={Home} />
       <Route path={ROUTES.SERVICES} component={Services} />
       <Route path={ROUTES.BOOKLET} component={Booklet} />
-      <Route path={ROUTES.BOOKING} component={BookingCalendly} />
+      <Route path={ROUTES.BOOKING} component={Booking} />
       <Route path={ROUTES.BLOG} component={Blog} />
       <Route path={ROUTES.ABOUT} component={About} />
       <Route path={ROUTES.FAQ} component={FAQ} />
