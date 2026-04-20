@@ -33,7 +33,8 @@ export default function Home() {
   const heroRef = useRef<HTMLElement>(null);
   const { scrollY } = useScroll();
   // Parallax: background image drifts slowly up, stars drift faster, content drifts mid.
-  const bgY = useTransform(scrollY, [0, 800], [0, 160]);
+  // Parallax: gentle only, image mostly static so moon phases stay visible.
+  const bgY = useTransform(scrollY, [0, 800], [0, 80]);
   const starsY = useTransform(scrollY, [0, 800], [0, -120]);
   const heroContentY = useTransform(scrollY, [0, 600], [0, 80]);
   const heroFade = useTransform(scrollY, [0, 400], [1, 0.35]);
@@ -45,13 +46,17 @@ export default function Home() {
         ref={heroRef}
         className="relative min-h-[88vh] md:min-h-screen flex items-center justify-center overflow-hidden"
       >
-        {/* Background image (parallax) */}
+        {/* Background image (parallax) — anchored to top so moon phases sit
+            fully below the nav, not cropped behind it. `bg-top` aligns the
+            top edge of the image with the top of the hero section. */}
         <motion.div
           style={{ y: bgY, backgroundImage: `url(${HERO_BACKGROUND})` }}
-          className="absolute inset-0 bg-cover bg-center scale-110"
+          className="absolute inset-0 bg-cover bg-top"
         />
-        {/* Gradient overlay — darker at top for nav readability, fade to page at bottom */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/45 to-background/95" />
+        {/* Soft bottom fade into the page background (for seamless section
+            transition) — no top darkening here, nav already has its own
+            glass treatment over the image. */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/10 to-background/95" />
         {/* Twinkle layer (CSS keyframe) */}
         <div className="absolute inset-0 starfield-twinkle pointer-events-none mix-blend-screen opacity-70" />
 

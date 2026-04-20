@@ -324,6 +324,49 @@ export async function searchBlogArticles(
     .limit(limit);
 }
 
+export async function getAllBlogArticles(limit: number = 50, offset: number = 0) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db
+    .select()
+    .from(blogArticles)
+    .orderBy(desc(blogArticles.createdAt))
+    .limit(limit)
+    .offset(offset);
+}
+
+export async function getBlogArticleById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db
+    .select()
+    .from(blogArticles)
+    .where(eq(blogArticles.id, id))
+    .limit(1);
+  return result[0];
+}
+
+export async function updateBlogArticle(
+  id: number,
+  data: Partial<InsertBlogArticle>,
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(blogArticles).set(data).where(eq(blogArticles.id, id));
+  const result = await db
+    .select()
+    .from(blogArticles)
+    .where(eq(blogArticles.id, id))
+    .limit(1);
+  return result[0];
+}
+
+export async function deleteBlogArticle(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(blogArticles).where(eq(blogArticles.id, id));
+}
+
 // ============================================================================
 // ASTRO CONTENT OPERATIONS
 // ============================================================================

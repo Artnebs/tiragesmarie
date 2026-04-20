@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Moon, Sun } from "lucide-react";
 import { ROUTES, SOCIAL_LINKS } from "@shared/constants";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [location] = useLocation();
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     function onScroll() {
@@ -82,6 +84,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   </a>
                 </Link>
               ))}
+              {toggleTheme && (
+                <button
+                  onClick={toggleTheme}
+                  className={`p-2 rounded-full transition-colors ${
+                    scrolled ? "hover:bg-muted/40" : "hover:bg-white/10"
+                  }`}
+                  aria-label="Basculer le thème"
+                  title={theme === "dark" ? "Mode clair" : "Mode sombre"}
+                >
+                  {theme === "dark" ? (
+                    <Sun className="w-4 h-4" />
+                  ) : (
+                    <Moon className="w-4 h-4" />
+                  )}
+                </button>
+              )}
               <Link href={ROUTES.ADMIN}>
                 <a className="px-4 py-2 bg-accent text-accent-foreground rounded-full font-semibold text-sm hover:shadow-lg hover:shadow-accent/30 transition-all">
                   Admin
@@ -126,6 +144,28 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   Admin
                 </a>
               </Link>
+              {toggleTheme && (
+                <button
+                  onClick={() => {
+                    toggleTheme();
+                  }}
+                  className={`w-full flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
+                    scrolled ? "hover:bg-muted/40" : "hover:bg-white/10"
+                  }`}
+                >
+                  {theme === "dark" ? (
+                    <>
+                      <Sun className="w-4 h-4" />
+                      Mode clair
+                    </>
+                  ) : (
+                    <>
+                      <Moon className="w-4 h-4" />
+                      Mode sombre
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           )}
         </div>

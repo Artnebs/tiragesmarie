@@ -14,7 +14,9 @@ import {
   Zap,
   LogOut,
   RefreshCw,
+  PencilLine,
 } from "lucide-react";
+import { Link } from "wouter";
 import { ROUTES } from "@shared/constants";
 
 const BOOKLET_STATUSES = ["pending", "generated", "sent", "completed"] as const;
@@ -154,10 +156,18 @@ export default function AdminDashboard() {
               Bienvenue {user?.name || "Marie"}. Gérez vos demandes et rendez-vous.
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={logout}>
-            <LogOut className="w-4 h-4 mr-2" />
-            Se déconnecter
-          </Button>
+          <div className="flex items-center gap-2">
+            <Link href={ROUTES.ADMIN_BLOG}>
+              <a className="inline-flex items-center gap-2 px-3 h-9 rounded-md border border-border text-sm font-semibold hover:bg-accent hover:text-accent-foreground transition-colors">
+                <PencilLine className="w-4 h-4" />
+                Blog
+              </a>
+            </Link>
+            <Button variant="outline" size="sm" onClick={logout}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Se déconnecter
+            </Button>
+          </div>
         </div>
 
         {/* Stats */}

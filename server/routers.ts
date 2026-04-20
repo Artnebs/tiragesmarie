@@ -18,7 +18,11 @@ import {
   updateAppointmentStatus,
   createBlogArticle,
   getBlogArticles,
+  getAllBlogArticles,
+  getBlogArticleById,
   getBlogArticleBySlug,
+  updateBlogArticle,
+  deleteBlogArticle,
   searchBlogArticles,
   getAstroSigns,
   getAstroSignByName,
@@ -305,6 +309,52 @@ const blogRouter = router({
     .input(z.object({ query: z.string(), limit: z.number().default(10) }))
     .query(async ({ input }) => {
       return searchBlogArticles(input.query, input.limit);
+    }),
+
+  // ── Admin procedures ──────────────────────────────────────────────────
+  listAll: protectedProcedure
+    .input(
+      z.object({
+        limit: z.number().default(50),
+        offset: z.number().default(0),
+      }),
+    )
+    .query(async ({ input }) => {
+      return getAllBlogArticles(input.limit, input.offset);
+    }),
+
+  getById: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      return getBlogArticleById(input.id);
+    }),
+
+  update: protectedProcedure
+    .input(
+      BlogArticleSchema.partial().extend({ id: z.number() }),
+    )
+    .mutation(async ({ input }) => {
+      const { id, status, ...rest } = input;
+      const patch: Record<string, unknown> = { ...rest };
+      if (status !== undefined) {
+        patch.status = status;
+        // When flipping to published, stamp publishedAt if not already set.
+        if (status === "published") {
+          const current = await getBlogArticleById(id);
+          if (current && !current.publishedAt) {
+            patch.publishedAt = new Date();
+          }
+        }
+      }
+      const updated = await updateBlogArticle(id, patch as any);
+      return updated;
+    }),
+
+  remove: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      await deleteBlogArticle(input.id);
+      return { success: true };
     }),
 });
 
