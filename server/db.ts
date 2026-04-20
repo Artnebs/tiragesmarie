@@ -496,6 +496,19 @@ export async function updateStripePaymentStatus(
     .where(eq(stripePayments.id, id));
 }
 
+export async function updateStripePaymentBySessionId(
+  stripeSessionId: string,
+  data: Partial<Pick<typeof stripePayments.$inferInsert, "status" | "stripePaymentIntentId">>
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(stripePayments)
+    .set(data as any)
+    .where(eq(stripePayments.stripeSessionId, stripeSessionId));
+}
+
 export async function getStripePaymentsByBookletRequest(
   bookletRequestId: number
 ) {
