@@ -269,3 +269,34 @@ export const bookletTemplates = mysqlTable("booklet_templates", {
 
 export type BookletTemplate = typeof bookletTemplates.$inferSelect;
 export type InsertBookletTemplate = typeof bookletTemplates.$inferInsert;
+
+/**
+ * Availability Rules - Règles de disponibilité hebdomadaires de Marie
+ */
+export const availabilityRules = mysqlTable("availability_rules", {
+  id: int("id").autoincrement().primaryKey(),
+  dayOfWeek: int("dayOfWeek").notNull(), // 0=Sunday … 6=Saturday
+  startTime: varchar("startTime", { length: 5 }).notNull(), // "HH:MM"
+  endTime: varchar("endTime", { length: 5 }).notNull(), // "HH:MM"
+  slotDurationMin: int("slotDurationMin").notNull().default(90),
+  isActive: int("isActive", { unsigned: true }).notNull().default(1), // boolean as tinyint
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AvailabilityRule = typeof availabilityRules.$inferSelect;
+export type InsertAvailabilityRule = typeof availabilityRules.$inferInsert;
+
+/**
+ * Availability Blocks - Fenêtres bloquées ponctuelles (vacances, exceptions)
+ */
+export const availabilityBlocks = mysqlTable("availability_blocks", {
+  id: int("id").autoincrement().primaryKey(),
+  startAt: datetime("startAt").notNull(),
+  endAt: datetime("endAt").notNull(),
+  reason: varchar("reason", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AvailabilityBlock = typeof availabilityBlocks.$inferSelect;
+export type InsertAvailabilityBlock = typeof availabilityBlocks.$inferInsert;
