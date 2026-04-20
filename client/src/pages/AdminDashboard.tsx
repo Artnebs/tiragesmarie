@@ -1,32 +1,107 @@
+import { useState } from "react";
+import { useLocation } from "wouter";
+import { useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useLocation } from "wouter";
-import { useEffect } from "react";
 import { trpc } from "@/lib/trpc";
-import { Loader2, BarChart3, Mail, Calendar, BookOpen, Zap } from "lucide-react";
+import { toast } from "sonner";
+import {
+  Loader2,
+  Mail,
+  Calendar,
+  BookOpen,
+  Zap,
+  LogOut,
+  RefreshCw,
+} from "lucide-react";
+import { ROUTES } from "@shared/constants";
+
+const BOOKLET_STATUSES = ["pending", "generated", "sent", "completed"] as const;
+const APPOINTMENT_STATUSES = [
+  "pending",
+  "confirmed",
+  "completed",
+  "cancelled",
+] as const;
+
+const BOOKLET_STATUS_LABEL: Record<string, string> = {
+  pending: "En attente",
+  generated: "Livret généré",
+  sent: "Envoyé",
+  completed: "Terminé",
+};
+
+const APPOINTMENT_STATUS_LABEL: Record<string, string> = {
+  pending: "En attente",
+  confirmed: "Confirmé",
+  completed: "Terminé",
+  cancelled: "Annulé",
+};
+
+function statusPillClasses(status: string): string {
+  switch (status) {
+    case "pending":
+      return "bg-yellow-100 text-yellow-800";
+    case "confirmed":
+    case "generated":
+      return "bg-blue-100 text-blue-800";
+    case "sent":
+    case "completed":
+      return "bg-green-100 text-green-800";
+    case "cancelled":
+      return "bg-red-100 text-red-800";
+    default:
+      return "bg-slate-100 text-slate-800";
+  }
+}
 
 export default function AdminDashboard() {
-  const { user, isAuthenticated, loading } = useAuth();
-  const [location, setLocation] = useLocation();
+  const { user, isAuthenticated, loading, logout } = useAuth();
+  const [, setLocation] = useLocation();
 
-  // Redirect if not authenticated
   useEffect(() => {
     if (!loading && !isAuthenticated) {
-      setLocation("/");
+      setLocation(ROUTES.ADMIN_LOGIN);
     }
   }, [isAuthenticated, loading, setLocation]);
 
-  // Fetch data
+  const [bookletFilter, setBookletFilter] = useState<string>("all");
+  const [apptFilter, setApptFilter] = useState<string>("all");
+
   const bookletRequests = trpc.booklet.list.useQuery(
-    { status: undefined, limit: 10, offset: 0 },
-    { enabled: isAuthenticated }
+    {
+      status: bookletFilter === "all" ? undefined : bookletFilter,
+      limit: 50,
+      offset: 0,
+    },
+    { enabled: isAuthenticated },
   );
 
   const appointments = trpc.appointment.list.useQuery(
-    { status: undefined, limit: 10, offset: 0 },
-    { enabled: isAuthenticated }
+    {
+      status: apptFilter === "all" ? undefined : apptFilter,
+      limit: 50,
+      offset: 0,
+    },
+    { enabled: isAuthenticated },
   );
+
+  const updateBookletStatus = trpc.booklet.updateStatus.useMutation({
+    onSuccess: () => {
+      toast.success("Statut mis à jour");
+      bookletRequests.refetch();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const updateAppointmentStatus = trpc.appointment.updateStatus.useMutation({
+    onSuccess: () => {
+      toast.success("Statut mis à jour");
+      appointments.refetch();
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
   if (loading) {
     return (
@@ -40,25 +115,27 @@ export default function AdminDashboard() {
     return null;
   }
 
+  const pendingBooklets =
+    bookletRequests.data?.filter((r: any) => r.status === "pending").length ?? 0;
+  const pendingAppointments =
+    appointments.data?.filter((a: any) => a.status === "pending").length ?? 0;
+
   const stats = [
     {
       label: "Demandes de Livrets",
-      value: bookletRequests.data?.length || 0,
+      value: bookletRequests.data?.length ?? 0,
       icon: BookOpen,
       color: "text-accent",
     },
     {
       label: "Rendez-vous",
-      value: appointments.data?.length || 0,
+      value: appointments.data?.length ?? 0,
       icon: Calendar,
       color: "text-amber-600",
     },
     {
-      label: "En Attente",
-      value:
-        (bookletRequests.data?.filter((r: any) => r.status === "pending").length ||
-          0) +
-        (appointments.data?.filter((a: any) => a.status === "pending").length || 0),
+      label: "En attente",
+      value: pendingBooklets + pendingAppointments,
       icon: Zap,
       color: "text-orange-500",
     },
@@ -68,16 +145,22 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
-        <div className="mb-12">
-          <h1 className="font-serif text-4xl font-bold text-foreground mb-2">
-            Tableau de Bord Admin
-          </h1>
-          <p className="text-muted-foreground">
-            Bienvenue, {user?.name || "Admin"}. Gérez vos demandes et rendez-vous.
-          </p>
+        <div className="flex items-start justify-between mb-12">
+          <div>
+            <h1 className="font-serif text-4xl font-bold text-foreground mb-2">
+              Tableau de Bord
+            </h1>
+            <p className="text-muted-foreground">
+              Bienvenue {user?.name || "Marie"}. Gérez vos demandes et rendez-vous.
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={logout}>
+            <LogOut className="w-4 h-4 mr-2" />
+            Se déconnecter
+          </Button>
         </div>
 
-        {/* Stats Grid */}
+        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           {stats.map((stat) => {
             const Icon = stat.icon;
@@ -99,189 +182,252 @@ export default function AdminDashboard() {
           })}
         </div>
 
-        {/* Booklet Requests Section */}
-        <div className="mb-12">
-          <h2 className="font-serif text-2xl font-bold text-foreground mb-6">
-            Demandes de Livrets Récentes
-          </h2>
-          {bookletRequests.isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin text-accent" />
+        {/* Booklet Requests */}
+        <section className="mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-serif text-2xl font-bold text-foreground">
+              Demandes de Livrets
+            </h2>
+            <div className="flex items-center gap-2">
+              <select
+                className="text-sm border border-border rounded-md px-2 py-1 bg-background"
+                value={bookletFilter}
+                onChange={(e) => setBookletFilter(e.target.value)}
+              >
+                <option value="all">Tous les statuts</option>
+                {BOOKLET_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {BOOKLET_STATUS_LABEL[s]}
+                  </option>
+                ))}
+              </select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => bookletRequests.refetch()}
+                disabled={bookletRequests.isFetching}
+              >
+                <RefreshCw
+                  className={`w-4 h-4 ${
+                    bookletRequests.isFetching ? "animate-spin" : ""
+                  }`}
+                />
+              </Button>
             </div>
-          ) : bookletRequests.data && bookletRequests.data.length > 0 ? (
-            <div className="overflow-x-auto">
+          </div>
+
+          {bookletRequests.isLoading ? (
+            <Card className="p-8 flex justify-center">
+              <Loader2 className="w-6 h-6 animate-spin text-accent" />
+            </Card>
+          ) : (bookletRequests.data?.length ?? 0) === 0 ? (
+            <Card className="p-8 text-center">
+              <Mail className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+              <p className="text-muted-foreground">
+                Aucune demande pour ce filtre.
+              </p>
+            </Card>
+          ) : (
+            <div className="overflow-x-auto border border-border rounded-lg">
               <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-3 px-4 font-semibold text-foreground">
-                      Nom
-                    </th>
-                    <th className="text-left py-3 px-4 font-semibold text-foreground">
-                      Email
-                    </th>
-                    <th className="text-left py-3 px-4 font-semibold text-foreground">
-                      Date de Naissance
-                    </th>
-                    <th className="text-left py-3 px-4 font-semibold text-foreground">
-                      Statut
-                    </th>
-                    <th className="text-left py-3 px-4 font-semibold text-foreground">
-                      Actions
-                    </th>
+                <thead className="bg-muted/40">
+                  <tr>
+                    <th className="text-left py-3 px-4 font-semibold">Nom</th>
+                    <th className="text-left py-3 px-4 font-semibold">Email</th>
+                    <th className="text-left py-3 px-4 font-semibold">Naissance</th>
+                    <th className="text-left py-3 px-4 font-semibold">Reçue le</th>
+                    <th className="text-left py-3 px-4 font-semibold">Statut</th>
+                    <th className="text-left py-3 px-4 font-semibold">Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {bookletRequests.data.map((request: any) => (
+                  {bookletRequests.data!.map((request: any) => (
                     <tr
                       key={request.id}
-                      className="border-b border-border hover:bg-muted/50 transition-colors"
+                      className="border-t border-border hover:bg-muted/20"
                     >
                       <td className="py-3 px-4">
                         {request.firstName} {request.lastName}
                       </td>
-                      <td className="py-3 px-4">{request.email}</td>
-                      <td className="py-3 px-4">{request.dateOfBirth}</td>
+                      <td className="py-3 px-4">
+                        <a
+                          href={`mailto:${request.email}`}
+                          className="text-accent hover:underline"
+                        >
+                          {request.email}
+                        </a>
+                      </td>
+                      <td className="py-3 px-4">
+                        {request.dateOfBirth} {request.timeOfBirth}
+                        <div className="text-xs text-muted-foreground">
+                          {request.placeOfBirth}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-muted-foreground">
+                        {new Date(request.createdAt).toLocaleDateString("fr-FR")}
+                      </td>
                       <td className="py-3 px-4">
                         <span
-                          className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                            request.status === "pending"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : request.status === "in_progress"
-                                ? "bg-blue-100 text-blue-800"
-                                : "bg-green-100 text-green-800"
-                          }`}
+                          className={`px-3 py-1 rounded-full text-xs font-semibold ${statusPillClasses(
+                            request.status,
+                          )}`}
                         >
-                          {request.status === "pending"
-                            ? "En attente"
-                            : request.status === "in_progress"
-                              ? "En cours"
-                              : "Livré"}
+                          {BOOKLET_STATUS_LABEL[request.status] ??
+                            request.status}
                         </span>
                       </td>
                       <td className="py-3 px-4">
-                        <Button variant="outline" size="sm">
-                          Voir
-                        </Button>
+                        <select
+                          value={request.status}
+                          onChange={(e) =>
+                            updateBookletStatus.mutate({
+                              id: request.id,
+                              status: e.target.value,
+                            })
+                          }
+                          disabled={updateBookletStatus.isPending}
+                          className="text-xs border border-border rounded-md px-2 py-1 bg-background"
+                        >
+                          {BOOKLET_STATUSES.map((s) => (
+                            <option key={s} value={s}>
+                              → {BOOKLET_STATUS_LABEL[s]}
+                            </option>
+                          ))}
+                        </select>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          ) : (
+          )}
+        </section>
+
+        {/* Appointments */}
+        <section className="mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-serif text-2xl font-bold text-foreground">
+              Rendez-vous
+            </h2>
+            <div className="flex items-center gap-2">
+              <select
+                className="text-sm border border-border rounded-md px-2 py-1 bg-background"
+                value={apptFilter}
+                onChange={(e) => setApptFilter(e.target.value)}
+              >
+                <option value="all">Tous les statuts</option>
+                {APPOINTMENT_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {APPOINTMENT_STATUS_LABEL[s]}
+                  </option>
+                ))}
+              </select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => appointments.refetch()}
+                disabled={appointments.isFetching}
+              >
+                <RefreshCw
+                  className={`w-4 h-4 ${
+                    appointments.isFetching ? "animate-spin" : ""
+                  }`}
+                />
+              </Button>
+            </div>
+          </div>
+
+          {appointments.isLoading ? (
+            <Card className="p-8 flex justify-center">
+              <Loader2 className="w-6 h-6 animate-spin text-accent" />
+            </Card>
+          ) : (appointments.data?.length ?? 0) === 0 ? (
             <Card className="p-8 text-center">
-              <Mail className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+              <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
               <p className="text-muted-foreground">
-                Aucune demande de livret pour le moment
+                Aucun rendez-vous pour ce filtre.
               </p>
             </Card>
-          )}
-        </div>
-
-        {/* Appointments Section */}
-        <div className="mb-12">
-          <h2 className="font-serif text-2xl font-bold text-foreground mb-6">
-            Rendez-vous Récents
-          </h2>
-          {appointments.isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin text-accent" />
-            </div>
-          ) : appointments.data && appointments.data.length > 0 ? (
-            <div className="overflow-x-auto">
+          ) : (
+            <div className="overflow-x-auto border border-border rounded-lg">
               <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-3 px-4 font-semibold text-foreground">
-                      Nom
-                    </th>
-                    <th className="text-left py-3 px-4 font-semibold text-foreground">
-                      Email
-                    </th>
-                    <th className="text-left py-3 px-4 font-semibold text-foreground">
-                      Téléphone
-                    </th>
-                    <th className="text-left py-3 px-4 font-semibold text-foreground">
-                      Date du RDV
-                    </th>
-                    <th className="text-left py-3 px-4 font-semibold text-foreground">
-                      Statut
-                    </th>
-                    <th className="text-left py-3 px-4 font-semibold text-foreground">
-                      Actions
-                    </th>
+                <thead className="bg-muted/40">
+                  <tr>
+                    <th className="text-left py-3 px-4 font-semibold">Nom</th>
+                    <th className="text-left py-3 px-4 font-semibold">Contact</th>
+                    <th className="text-left py-3 px-4 font-semibold">Date</th>
+                    <th className="text-left py-3 px-4 font-semibold">Statut</th>
+                    <th className="text-left py-3 px-4 font-semibold">Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {appointments.data.map((appointment: any) => (
+                  {appointments.data!.map((appointment: any) => (
                     <tr
                       key={appointment.id}
-                      className="border-b border-border hover:bg-muted/50 transition-colors"
+                      className="border-t border-border hover:bg-muted/20"
                     >
                       <td className="py-3 px-4">
                         {appointment.firstName} {appointment.lastName}
                       </td>
-                      <td className="py-3 px-4">{appointment.email}</td>
-                      <td className="py-3 px-4">{appointment.phone || "-"}</td>
                       <td className="py-3 px-4">
-                        {new Date(appointment.appointmentDate).toLocaleDateString(
-                          "fr-FR"
+                        <a
+                          href={`mailto:${appointment.email}`}
+                          className="text-accent hover:underline"
+                        >
+                          {appointment.email}
+                        </a>
+                        {appointment.phone && (
+                          <div className="text-xs text-muted-foreground">
+                            {appointment.phone}
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        {new Date(appointment.appointmentDate).toLocaleString(
+                          "fr-FR",
+                          {
+                            timeZone: "Europe/Paris",
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          },
                         )}
                       </td>
                       <td className="py-3 px-4">
                         <span
-                          className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                            appointment.status === "pending"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : appointment.status === "confirmed"
-                                ? "bg-blue-100 text-blue-800"
-                                : "bg-green-100 text-green-800"
-                          }`}
+                          className={`px-3 py-1 rounded-full text-xs font-semibold ${statusPillClasses(
+                            appointment.status,
+                          )}`}
                         >
-                          {appointment.status === "pending"
-                            ? "En attente"
-                            : appointment.status === "confirmed"
-                              ? "Confirmé"
-                              : "Complété"}
+                          {APPOINTMENT_STATUS_LABEL[appointment.status] ??
+                            appointment.status}
                         </span>
                       </td>
                       <td className="py-3 px-4">
-                        <Button variant="outline" size="sm">
-                          Voir
-                        </Button>
+                        <select
+                          value={appointment.status}
+                          onChange={(e) =>
+                            updateAppointmentStatus.mutate({
+                              id: appointment.id,
+                              status: e.target.value,
+                            })
+                          }
+                          disabled={updateAppointmentStatus.isPending}
+                          className="text-xs border border-border rounded-md px-2 py-1 bg-background"
+                        >
+                          {APPOINTMENT_STATUSES.map((s) => (
+                            <option key={s} value={s}>
+                              → {APPOINTMENT_STATUS_LABEL[s]}
+                            </option>
+                          ))}
+                        </select>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          ) : (
-            <Card className="p-8 text-center">
-              <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-              <p className="text-muted-foreground">
-                Aucun rendez-vous pour le moment
-              </p>
-            </Card>
           )}
-        </div>
-
-        {/* Future Features */}
-        <Card className="p-8 bg-muted/50 border-2 border-dashed border-border">
-          <div className="flex items-start gap-4">
-            <Zap className="w-6 h-6 text-accent flex-shrink-0 mt-1" />
-            <div>
-              <h3 className="font-semibold text-foreground mb-2">
-                Fonctionnalités à Venir
-              </h3>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Content Engine : Générer des posts Instagram et articles blog</li>
-                <li>• Générateur de Livrets : Créer et exporter des livrets PDF</li>
-                <li>• Gestion du Blog : Éditer et publier des articles</li>
-                <li>• IA Assistant : Aide à la génération de contenu (bientôt)</li>
-              </ul>
-            </div>
-          </div>
-        </Card>
+        </section>
       </div>
     </div>
   );

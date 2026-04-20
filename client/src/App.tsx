@@ -15,6 +15,7 @@ import FAQ from "./pages/FAQ";
 import Contact from "./pages/Contact";
 import Legal from "./pages/Legal";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminLogin from "./pages/AdminLogin";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
 import NotFound from "./pages/NotFound";
@@ -30,6 +31,7 @@ function Router() {
       <Route path={ROUTES.ABOUT} component={About} />
       <Route path={ROUTES.FAQ} component={FAQ} />
       <Route path={ROUTES.CONTACT} component={Contact} />
+      <Route path={ROUTES.ADMIN_LOGIN} component={AdminLogin} />
       <Route path={ROUTES.ADMIN} component={AdminDashboard} />
       <Route path={ROUTES.LEGAL_MENTIONS} component={Legal} />
       <Route path={ROUTES.LEGAL_PRIVACY} component={Legal} />

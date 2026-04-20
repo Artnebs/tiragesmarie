@@ -43,6 +43,7 @@ export const ROUTES = {
   FAQ: "/faq",
   CONTACT: "/contact",
   ADMIN: "/admin",
+  ADMIN_LOGIN: "/admin/login",
   ADMIN_DASHBOARD: "/admin/dashboard",
   ADMIN_REQUESTS: "/admin/requests",
   ADMIN_APPOINTMENTS: "/admin/appointments",
