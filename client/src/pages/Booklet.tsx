@@ -26,6 +26,7 @@ const BOOKLET_MOCKUP =
 export default function Booklet() {
   const [submitted, setSubmitted] = useState(false);
   const createBooklet = trpc.booklet.create.useMutation();
+  const createCheckout = trpc.stripe.createBookletCheckout.useMutation();
   const {
     register,
     handleSubmit,
@@ -36,9 +37,20 @@ export default function Booklet() {
 
   const onSubmit = async (data: BookletFormData) => {
     try {
-      await createBooklet.mutateAsync(data);
-      setSubmitted(true);
-      toast.success("Demande reçue ! Vous recevrez votre livret sous peu.");
+      const result = await createBooklet.mutateAsync(data);
+      const checkout = await createCheckout.mutateAsync({
+        bookletRequestId: result.requestId,
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+      });
+      if (checkout.checkoutUrl) {
+        window.location.href = checkout.checkoutUrl;
+      } else {
+        // Fallback: show confirmation if Stripe URL is missing
+        setSubmitted(true);
+        toast.success("Demande reçue ! Vous recevrez votre livret sous peu.");
+      }
     } catch (error) {
       toast.error("Une erreur s'est produite. Veuillez réessayer.");
       console.error(error);
@@ -296,12 +308,12 @@ export default function Booklet() {
               {/* Submit */}
               <button
                 type="submit"
-                disabled={isSubmitting || createBooklet.isPending}
+                disabled={isSubmitting || createBooklet.isPending || createCheckout.isPending}
                 className="w-full px-6 py-3 bg-accent text-accent-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting || createBooklet.isPending
-                  ? "Envoi en cours..."
-                  : "Commander mon livret"}
+                {isSubmitting || createBooklet.isPending || createCheckout.isPending
+                  ? "Redirection vers le paiement..."
+                  : "Commander mon livret — 49 €"}
               </button>
 
               <p className="text-xs text-muted-foreground text-center">
