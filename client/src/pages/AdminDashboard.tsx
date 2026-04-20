@@ -41,6 +41,40 @@ const APPOINTMENT_STATUS_LABEL: Record<string, string> = {
   cancelled: "Annulé",
 };
 
+function toDateLike(input: unknown): Date | null {
+  if (!input) return null;
+  if (input instanceof Date) return input;
+  if (typeof input === "string" || typeof input === "number") {
+    const d = new Date(input);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  return null;
+}
+
+function formatBirthDate(input: unknown): string {
+  const d = toDateLike(input);
+  if (!d) return "—";
+  return d.toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+function formatBirthTime(input: unknown): string {
+  // MySQL TIME comes back as either "HH:MM:SS" string or Date depending on driver.
+  if (typeof input === "string") return input.slice(0, 5);
+  const d = toDateLike(input);
+  if (!d) return "";
+  return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+}
+
+function formatShortDate(input: unknown): string {
+  const d = toDateLike(input);
+  if (!d) return "—";
+  return d.toLocaleDateString("fr-FR");
+}
+
 function statusPillClasses(status: string): string {
   switch (status) {
     case "pending":
@@ -268,13 +302,15 @@ export default function AdminDashboard() {
                         </a>
                       </td>
                       <td className="py-3 px-4">
-                        {request.dateOfBirth} {request.timeOfBirth}
+                        {formatBirthDate(request.dateOfBirth)}
+                        {" · "}
+                        {formatBirthTime(request.timeOfBirth)}
                         <div className="text-xs text-muted-foreground">
                           {request.placeOfBirth}
                         </div>
                       </td>
                       <td className="py-3 px-4 text-muted-foreground">
-                        {new Date(request.createdAt).toLocaleDateString("fr-FR")}
+                        {formatShortDate(request.createdAt)}
                       </td>
                       <td className="py-3 px-4">
                         <span
@@ -393,14 +429,16 @@ export default function AdminDashboard() {
                         )}
                       </td>
                       <td className="py-3 px-4">
-                        {new Date(appointment.appointmentDate).toLocaleString(
-                          "fr-FR",
-                          {
-                            timeZone: "Europe/Paris",
-                            dateStyle: "medium",
-                            timeStyle: "short",
-                          },
-                        )}
+                        {(() => {
+                          const d = toDateLike(appointment.appointmentDate);
+                          return d
+                            ? d.toLocaleString("fr-FR", {
+                                timeZone: "Europe/Paris",
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                              })
+                            : "—";
+                        })()}
                       </td>
                       <td className="py-3 px-4">
                         <span
