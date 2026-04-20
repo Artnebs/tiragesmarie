@@ -38,8 +38,8 @@ export type InsertUser = typeof users.$inferInsert;
  */
 export const stripePayments = mysqlTable("stripe_payments", {
   id: int("id").autoincrement().primaryKey(),
-  stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 100 }).notNull().unique(),
-  stripeSessionId: varchar("stripeSessionId", { length: 100 }),
+  stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 100 }).unique(),
+  stripeSessionId: varchar("stripeSessionId", { length: 100 }).notNull().unique(),
   bookletRequestId: int("bookletRequestId"),
   appointmentId: int("appointmentId"),
   amount: int("amount").notNull(),

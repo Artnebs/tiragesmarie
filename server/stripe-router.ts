@@ -8,13 +8,21 @@ import { z } from "zod";
 import Stripe from "stripe";
 import {
   createStripePayment,
-  getStripePaymentByIntentId,
+  getStripePaymentBySessionId,
   getStripePaymentsByBookletRequest,
   getStripePaymentsByAppointment,
 } from "./db";
 import { STRIPE_PRODUCTS } from "./stripe-products";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
+let _stripe: Stripe | null = null;
+function getStripe(): Stripe {
+  if (!_stripe) {
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) throw new Error("STRIPE_SECRET_KEY is not set");
+    _stripe = new Stripe(key);
+  }
+  return _stripe;
+}
 
 // ============================================================================
 // CHECKOUT PROCEDURES
@@ -38,7 +46,7 @@ export const stripeRouter = router({
         const product = STRIPE_PRODUCTS.booklet;
 
         // Créer une session de checkout Stripe
-        const session = await stripe.checkout.sessions.create({
+        const session = await getStripe().checkout.sessions.create({
           payment_method_types: ["card"],
           mode: "payment",
           customer_email: input.email,
@@ -67,7 +75,7 @@ export const stripeRouter = router({
 
         // Créer un enregistrement de paiement en attente
         await createStripePayment({
-          stripePaymentIntentId: session.payment_intent?.toString() || "",
+          stripePaymentIntentId: session.payment_intent?.toString() ?? null,
           stripeSessionId: session.id,
           bookletRequestId: input.bookletRequestId,
           amount: product.priceInCents,
@@ -106,7 +114,7 @@ export const stripeRouter = router({
         const product = STRIPE_PRODUCTS.appointment;
 
         // Créer une session de checkout Stripe
-        const session = await stripe.checkout.sessions.create({
+        const session = await getStripe().checkout.sessions.create({
           payment_method_types: ["card"],
           mode: "payment",
           customer_email: input.email,
@@ -135,7 +143,7 @@ export const stripeRouter = router({
 
         // Créer un enregistrement de paiement en attente
         await createStripePayment({
-          stripePaymentIntentId: session.payment_intent?.toString() || "",
+          stripePaymentIntentId: session.payment_intent?.toString() ?? null,
           stripeSessionId: session.id,
           appointmentId: input.appointmentId,
           amount: product.priceInCents,
@@ -158,20 +166,36 @@ export const stripeRouter = router({
     }),
 
   /**
-   * Récupérer le statut d'un paiement
+   * Récupérer le statut d'un paiement — DB authoritative, Stripe API as fallback
    */
   getPaymentStatus: publicProcedure
     .input(z.object({ sessionId: z.string() }))
     .query(async ({ input }) => {
       try {
-        const session = await stripe.checkout.sessions.retrieve(input.sessionId);
+        // Check DB first — it's authoritative after webhook fires
+        const dbPayment = await getStripePaymentBySessionId(input.sessionId);
+        if (dbPayment && dbPayment.status !== "pending") {
+          return {
+            status: dbPayment.status,
+            sessionId: input.sessionId,
+            paymentIntentId: dbPayment.stripePaymentIntentId ?? null,
+            amountTotal: dbPayment.amount,
+            currency: dbPayment.currency,
+            productType: dbPayment.productType,
+            customerName: dbPayment.customerName ?? null,
+          };
+        }
 
+        // Fall back to Stripe API for pending states
+        const session = await getStripe().checkout.sessions.retrieve(input.sessionId);
         return {
           status: session.payment_status,
           sessionId: session.id,
-          paymentIntentId: session.payment_intent,
+          paymentIntentId: session.payment_intent ?? null,
           amountTotal: session.amount_total,
           currency: session.currency,
+          productType: (session.metadata?.productType as "booklet" | "appointment") ?? null,
+          customerName: session.metadata?.customerName ?? null,
         };
       } catch (error) {
         console.error("[Stripe] Error retrieving session:", error);
