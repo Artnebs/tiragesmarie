@@ -15,6 +15,8 @@ import {
   LogOut,
   RefreshCw,
   PencilLine,
+  Sparkles,
+  Download,
 } from "lucide-react";
 import { Link } from "wouter";
 import { ROUTES } from "@shared/constants";
@@ -129,6 +131,29 @@ export default function AdminDashboard() {
       bookletRequests.refetch();
     },
     onError: (err) => toast.error(err.message),
+  });
+
+  // Track generated PDFs per request id so the row can show a Download link
+  // once generation completes. `documentUrl` returns from the mutation; we
+  // also fall back to `bookletGenerator.getForRequest` for pre-existing ones.
+  const [bookletUrls, setBookletUrls] = useState<Record<number, string>>({});
+  const [generatingId, setGeneratingId] = useState<number | null>(null);
+
+  const generateBooklet = trpc.bookletGenerator.generate.useMutation({
+    onSuccess: (data, vars) => {
+      toast.success(
+        data.gaps.length === 0
+          ? "Livret généré"
+          : `Livret généré (${data.gaps.length} paragraphe${data.gaps.length > 1 ? "s" : ""} en attente de Marie)`,
+      );
+      setBookletUrls((m) => ({ ...m, [vars.bookletRequestId]: data.documentUrl }));
+      setGeneratingId(null);
+      bookletRequests.refetch();
+    },
+    onError: (err) => {
+      toast.error(err.message);
+      setGeneratingId(null);
+    },
   });
 
   const updateAppointmentStatus = trpc.appointment.updateStatus.useMutation({
@@ -281,6 +306,7 @@ export default function AdminDashboard() {
                     <th className="text-left py-3 px-4 font-semibold">Naissance</th>
                     <th className="text-left py-3 px-4 font-semibold">Reçue le</th>
                     <th className="text-left py-3 px-4 font-semibold">Statut</th>
+                    <th className="text-left py-3 px-4 font-semibold">Livret</th>
                     <th className="text-left py-3 px-4 font-semibold">Action</th>
                   </tr>
                 </thead>
@@ -321,6 +347,53 @@ export default function AdminDashboard() {
                           {BOOKLET_STATUS_LABEL[request.status] ??
                             request.status}
                         </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        {bookletUrls[request.id] ? (
+                          <div className="flex flex-col gap-1">
+                            <a
+                              href={bookletUrls[request.id]}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 text-accent hover:underline text-xs font-semibold"
+                            >
+                              <Download className="w-3 h-3" />
+                              PDF
+                            </a>
+                            <button
+                              type="button"
+                              disabled={generatingId === request.id}
+                              onClick={() => {
+                                setGeneratingId(request.id);
+                                generateBooklet.mutate({
+                                  bookletRequestId: request.id,
+                                });
+                              }}
+                              className="text-[10px] text-muted-foreground hover:text-accent transition-colors"
+                            >
+                              Régénérer
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={generatingId === request.id}
+                            onClick={() => {
+                              setGeneratingId(request.id);
+                              generateBooklet.mutate({
+                                bookletRequestId: request.id,
+                              });
+                            }}
+                            className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 border border-accent/60 text-accent rounded-md hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-50"
+                          >
+                            {generatingId === request.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Sparkles className="w-3 h-3" />
+                            )}
+                            {generatingId === request.id ? "Génération…" : "Générer"}
+                          </button>
+                        )}
                       </td>
                       <td className="py-3 px-4">
                         <select

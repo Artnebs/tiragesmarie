@@ -406,39 +406,88 @@ const bookletGeneratorRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      // Get the request
       const request = await getBookletRequestById(input.bookletRequestId);
       if (!request) {
-        throw new Error("Booklet request not found");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Demande de livret introuvable",
+        });
       }
 
-      // Calculate astrological signs (simplified)
-      const sunSign = calculateSunSign(new Date(request.dateOfBirth));
-      const moonSign = calculateMoonSign(
-        new Date(request.dateOfBirth),
-        request.timeOfBirth
-      );
-      const ascendant = calculateAscendant(
-        new Date(request.dateOfBirth),
-        request.timeOfBirth,
-        request.placeOfBirth
+      // 1) Compute the natal chart
+      const { computeChart } = await import("./astro-engine");
+      const toYMD = (d: Date | string) => {
+        if (typeof d === "string") return d.slice(0, 10);
+        return d.toISOString().slice(0, 10);
+      };
+      const toHM = (t: string | Date): string => {
+        if (typeof t === "string") return t.slice(0, 5);
+        return t.toISOString().slice(11, 16);
+      };
+      const chart = await computeChart({
+        dateOfBirth: toYMD(request.dateOfBirth as any),
+        timeOfBirth: toHM(request.timeOfBirth as any),
+        placeOfBirth: request.placeOfBirth,
+      });
+
+      // 2) Assemble content from Marie's library
+      const { assembleBooklet, findGaps } = await import("./booklet-assembly");
+      const content = assembleBooklet(
+        {
+          firstName: request.firstName,
+          lastName: request.lastName,
+          dateOfBirth: toYMD(request.dateOfBirth as any),
+          timeOfBirth: toHM(request.timeOfBirth as any),
+          placeOfBirth: request.placeOfBirth,
+          email: request.email,
+        },
+        chart,
       );
 
-      // Create generated booklet record
+      // 3) Render to PDF
+      const { renderBookletPDF } = await import("./booklet-pdf");
+      const pdfBuffer = await renderBookletPDF(content);
+
+      // 4) Persist to local disk (MVP; S3 later)
+      const fs = await import("node:fs");
+      const path = await import("node:path");
+      const LIVRETS_DIR = path.resolve(process.cwd(), "generated-livrets");
+      if (!fs.existsSync(LIVRETS_DIR)) {
+        fs.mkdirSync(LIVRETS_DIR, { recursive: true });
+      }
+      const timestamp = Date.now();
+      const slug = `${request.firstName}-${request.lastName}`
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+      const filename = `${slug}-${input.bookletRequestId}-${timestamp}.pdf`;
+      const absPath = path.join(LIVRETS_DIR, filename);
+      fs.writeFileSync(absPath, pdfBuffer);
+      const documentUrl = `/api/booklets/file/${encodeURIComponent(filename)}`;
+
+      // 5) Upsert the generated_booklets row + bump the request status
       const booklet = await createGeneratedBooklet({
         bookletRequestId: input.bookletRequestId,
-        sunSign,
-        moonSign,
-        ascendant,
-        status: "draft",
+        sunSign: chart.sun.sign,
+        moonSign: chart.moon.sign,
+        ascendant: chart.ascendant.sign,
+        documentUrl,
+        documentFormat: "pdf",
+        contentData: { chart, gaps: findGaps(content) } as any,
+        status: "ready",
       });
+      await updateBookletRequestStatus(input.bookletRequestId, "generated");
 
       return {
         success: true,
         bookletId: booklet.id,
-        sunSign,
-        moonSign,
-        ascendant,
+        documentUrl,
+        sunSign: chart.sun.sign,
+        moonSign: chart.moon.sign,
+        ascendant: chart.ascendant.sign,
+        gaps: findGaps(content),
       };
     }),
 
@@ -446,6 +495,13 @@ const bookletGeneratorRouter = router({
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
       return getGeneratedBookletById(input.id);
+    }),
+
+  getForRequest: protectedProcedure
+    .input(z.object({ bookletRequestId: z.number() }))
+    .query(async ({ input }) => {
+      const { getLatestBookletForRequest } = await import("./db");
+      return getLatestBookletForRequest(input.bookletRequestId);
     }),
 
   updateStatus: protectedProcedure

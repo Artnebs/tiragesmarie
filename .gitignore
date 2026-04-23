@@ -112,3 +112,6 @@ temp/
 # Manus runtime leftovers (auto-generated, not part of source)
 client/public/__manus__/
 .manus-logs/
+
+# Generated livret PDFs (MVP local storage; S3 later)
+generated-livrets/

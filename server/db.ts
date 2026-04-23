@@ -466,6 +466,18 @@ export async function getGeneratedBookletById(id: number) {
   return result[0];
 }
 
+export async function getLatestBookletForRequest(bookletRequestId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db
+    .select()
+    .from(generatedBooklets)
+    .where(eq(generatedBooklets.bookletRequestId, bookletRequestId))
+    .orderBy(desc(generatedBooklets.createdAt))
+    .limit(1);
+  return result[0];
+}
+
 export async function updateGeneratedBooklet(
   id: number,
   data: Partial<typeof generatedBooklets.$inferInsert>
