@@ -27,20 +27,24 @@
 - Do not modify `drizzle/migrations/*` retroactively — add a new migration instead.
 - This repo is solo Arthur — no PR review process. Direct commits to feature branch are fine, but ASK before pushing to `main`.
 
+<!-- AUTO-FOCUS:start -->
 ## Current Focus
 
-**Date:** 2026-04-30
-**Status:** Phase 4 UI polish in progress; livret PDF pipeline shipped end-to-end; Marie's "alignement en détails" content parsed into typed library.
-**Branch:** `feat/phase-4-ui-polish` (clean except untracked `.run-dev.sh`)
+**As of**: 2026-05-08
+**Objective**: <set objective for current sprint — preserved across E1 hook fires>
+**Last completed**: b79cfd6 — docs(claude): add repo guide and Current Focus for brain sync
+**Open blockers**: none
+**Next actions**:
+1. (auto-populated from `NEXT:` commit trailers by E1 Stop hook)
 
-**Active tasks:**
-- PDF engine for livret booklet — DONE (`f10daeb feat(pdf): end-to-end natal chart → assembly → PDF booklet`). Generated artifact present in `generated-livrets/sophie-martin-1-1776819550321.pdf`.
-- Marie's content library parsed (`371cefa feat(content): parse Marie's 'Alignement en détails' PDF into typed library`).
-- Admin password login replaced Manus OAuth (`f547e22`); date rendering fixed (`8b279d4`).
-- Cosmic theme + parallax hero + redesigned calendar + mobile-first polish shipped (`45385d6`).
-- Blog CMS + article detail + dark mode shipped (`538c138`).
-- Stripe + Resend integrations wired in code; **no real keys configured** in `.env` yet — payments and emails won't actually send in production until keys land.
+<!-- AUTO-FOCUS:end -->
 
-**Last commit:** `f10daeb feat(pdf): end-to-end natal chart → assembly → PDF booklet`
+## graphify
 
-**Next concrete step:** Provide real Stripe + Resend API keys in `.env`; smoke-test booking → email confirmation → PDF delivery end-to-end against the live ngrok demo before showing Marie.
+This project has a graphify knowledge graph at graphify-out/.
+
+Rules:
+- Before answering architecture or codebase questions, read graphify-out/GRAPH_REPORT.md for god nodes and community structure
+- If graphify-out/wiki/index.md exists, navigate it instead of reading raw files
+- For cross-module "how does X relate to Y" questions, use `graphify path "<A>" "<B>"`, or `graphify explain "<concept>"` — these traverse real graph edges. Do NOT use `graphify query` (broken BFS, returns irrelevant results)
+- After modifying code files in this session, run `graphify update .` to keep the graph current (AST-only, no API cost)
