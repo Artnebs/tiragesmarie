@@ -4,8 +4,9 @@
 
 ## Canonical context
 - Topic file: `~/.claude/projects/-home-arthur/memory/tiragesmarie-project.md` (canonical narrative, login + tunnel info)
-- Architecture overview: `ARCHITECTURE.md`
+- Architecture overview: `ARCHITECTURE.md` ⚠️ **STALE — lies about auth/hosting/booking/DB/output** (Manus-export, never updated). Use `~/.claude/projects/-home-arthur/memory/tiragesmarie-project.md` instead.
 - Test playbooks: `BOOKING_TESTING.md`, `EMAIL_TESTING.md`
+- ⚠️ `DOCUMENTATION.md` — also STALE Manus-export, same lies. Skip.
 - Generated booklets: `generated-livrets/`
 
 ## Dev environment
@@ -30,12 +31,12 @@
 <!-- AUTO-FOCUS:start -->
 ## Current Focus
 
-**As of**: 2026-05-08
-**Objective**: <set objective for current sprint — preserved across E1 hook fires>
-**Last completed**: b79cfd6 — docs(claude): add repo guide and Current Focus for brain sync
+**As of**: 2026-05-16
+**Objective**: continue from latest: Wave 57 — AUTO-FOCUS:start/end markers in CLAUDE.md
+**Last completed**: 5923847 — docs: Wave 57 — AUTO-FOCUS:start/end markers in CLAUDE.md
 **Open blockers**: none
 **Next actions**:
-1. (auto-populated from `NEXT:` commit trailers by E1 Stop hook)
+1. (no NEXT: trailers in recent commits)
 
 <!-- AUTO-FOCUS:end -->
 

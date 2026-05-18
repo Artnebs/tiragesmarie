@@ -1,5 +1,11 @@
 # Les Tirages de Marie - Documentation Complète
 
+> ⚠️ **STALE 2026-05-18** — Manus-export, NEVER updated. Same 5 lies as ARCHITECTURE.md.
+> Manus OAuth → password auth · Manus hosting → local+ngrok · Calendly → native booking ·
+> TiDB → MySQL/Drizzle · PPTX → PDF only.
+> **CANONICAL source of truth**: `~/.claude/projects/-home-arthur/memory/tiragesmarie-project.md`
+> Do NOT use this file as authoritative.
+
 ## 🌙 Vue d'ensemble
 
 **Les Tirages de Marie** est un mini-site élégant et complet pour une praticienne en guidances spirituelles et livrets astrologiques personnalisés. Le site combine une présence web professionnelle avec un système de gestion de demandes et un moteur de génération de livrets astrologiques.
