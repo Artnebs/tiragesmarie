@@ -1,9 +1,13 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Route, Switch } from "wouter";
+import { Route, Switch, Router } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { ROUTES } from "@shared/constants";
+
+// VITE_BASE_PATH is set to /tirages-marie/ in the Vercel project env.
+// Leave it unset (or set to /) for local dev so routing is unchanged.
+const BASE_PATH = (import.meta.env.VITE_BASE_PATH as string | undefined) ?? "/";
 
 import Home from "./pages/Home";
 import Services from "./pages/Services";
@@ -22,7 +26,7 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
 import NotFound from "./pages/NotFound";
 
-function Router() {
+function RouterSwitch() {
   return (
     <Switch>
       <Route path={ROUTES.HOME} component={Home} />
@@ -54,7 +58,9 @@ function App() {
       <ThemeProvider defaultTheme="light" switchable>
         <TooltipProvider>
           <Toaster />
-          <Router />
+          <Router base={BASE_PATH}>
+            <RouterSwitch />
+          </Router>
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

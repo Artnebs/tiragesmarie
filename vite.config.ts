@@ -4,7 +4,12 @@ import react from "@vitejs/plugin-react";
 import path from "node:path";
 import { defineConfig } from "vite";
 
+// When building for the workshop sub-path deployment, set VITE_BASE_PATH=/tirages-marie/
+// For local dev (pnpm dev), leave VITE_BASE_PATH unset — defaults to "/" so routes work as-is.
+const basePath = process.env.VITE_BASE_PATH ?? "/";
+
 export default defineConfig({
+  base: basePath,
   plugins: [react(), tailwindcss(), jsxLocPlugin()],
   resolve: {
     alias: {
